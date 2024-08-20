@@ -574,3 +574,151 @@ func Test_hideAndPoll(t *testing.T) {
 		}
 	})
 }
+
+func Test_del(t *testing.T) {
+	type delRep struct {
+		uid   uuid.UUID
+		alive bool
+		err   error
+	}
+
+	t.Run("test del", func(t *testing.T) {
+		respChan := make(chan delRep)
+
+		ts := newTestServer()
+		serverConn, clientConn, err := ts.getServerConn()
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		defer func() {
+			_ = serverConn.Close()
+			_ = clientConn.Close()
+			ts.endServer(t)
+		}()
+
+		uid, err := uuid.NewUUID()
+		if err != nil {
+			t.Error(err)
+		}
+
+		go func() {
+			uid, alive, err := del(clientConn, time.Second*4, uid)
+			respChan <- delRep{
+				uid, alive, err,
+			}
+		}()
+
+		mess, alive, err := readMessage(serverConn, time.Second*4)
+
+		if !alive {
+			t.Fatal(err)
+		}
+
+		parts := bytes.Split(mess, []byte(";"))
+
+		if len(parts) != 2 {
+			t.Fatal("improper message received")
+		}
+
+		if !bytes.Equal(parts[0], []byte("DEL")) {
+			t.Fatal("improper message received")
+		}
+
+		messUid, err := uuid.FromBytes(parts[1])
+
+		if !bytes.Equal(messUid[:], uid[:]) {
+			t.Fatal("uid does not match")
+		}
+
+		m := []byte("PASS;")
+		m = append(m, uid[:]...)
+
+		alive, err = writeMessage(serverConn, time.Second*4, m)
+
+		if !alive {
+			t.Fatal(err)
+		}
+
+		resp := <-respChan
+
+		if !resp.alive {
+			t.Fatal(resp.err)
+		}
+
+		if !bytes.Equal(resp.uid[:], uid[:]) {
+			t.Fatal("uid does not match")
+		}
+	})
+
+	t.Run("test del fail", func(t *testing.T) {
+		respChan := make(chan delRep)
+
+		ts := newTestServer()
+		serverConn, clientConn, err := ts.getServerConn()
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		defer func() {
+			_ = serverConn.Close()
+			_ = clientConn.Close()
+			ts.endServer(t)
+		}()
+
+		uid, err := uuid.NewUUID()
+		if err != nil {
+			t.Error(err)
+		}
+
+		go func() {
+			uid, alive, err := del(clientConn, time.Second*4, uid)
+			respChan <- delRep{
+				uid, alive, err,
+			}
+		}()
+
+		mess, alive, err := readMessage(serverConn, time.Second*4)
+
+		if !alive {
+			t.Fatal(err)
+		}
+
+		parts := bytes.Split(mess, []byte(";"))
+
+		if len(parts) != 2 {
+			t.Fatal("improper message received")
+		}
+
+		if !bytes.Equal(parts[0], []byte("DEL")) {
+			t.Fatal("improper message received")
+		}
+
+		messUid, err := uuid.FromBytes(parts[1])
+
+		if !bytes.Equal(messUid[:], uid[:]) {
+			t.Fatal("uid does not match")
+		}
+
+		m := []byte("FAIL;")
+		m = append(m, []byte("testing failure")...)
+
+		alive, err = writeMessage(serverConn, time.Second*4, m)
+
+		if !alive {
+			t.Fatal(err)
+		}
+
+		resp := <-respChan
+
+		if !resp.alive {
+			t.Fatal(resp.err)
+		}
+
+		if resp.err == nil {
+			t.Fatal("failed to catch error")
+		}
+	})
+}
