@@ -1,4 +1,4 @@
-module qldriver
+module github.com/govindansriram/qldriver
 
 go 1.22
 
