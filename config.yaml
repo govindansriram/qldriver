@@ -1,0 +1,18 @@
+users:
+  - name: pub
+    password: publisher
+    publisher: true
+
+  - name: sub
+    password: subscriber
+    subscriber: true
+
+port: 8080
+maxSubscriberConnections: 5
+maxPublisherConnections: 10
+maxMessageSize: 10000
+maxIoTimeSeconds: 5
+maxPollingTimeSeconds: 10
+address: localhost
+maxHiddenTimeSeconds: 30
+verbose: true

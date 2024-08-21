@@ -130,7 +130,7 @@ func NewPublisherClient(
 		kill:                make(chan struct{}),
 		utilizedConnections: make(chan struct{}, maxConnections),
 		readyConnections:    make(chan net.Conn, maxConnections),
-		isPub:               false,
+		isPub:               true,
 		port:                port,
 		address:             address,
 	}
@@ -191,7 +191,7 @@ func NewSubscriberClient(
 		kill:                  make(chan struct{}),
 		utilizedConnections:   make(chan struct{}, maxConnections),
 		readyConnections:      make(chan net.Conn, maxConnections),
-		isPub:                 true,
+		isPub:                 false,
 		port:                  port,
 		address:               address,
 	}
