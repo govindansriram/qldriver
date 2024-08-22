@@ -108,7 +108,7 @@ func TestPublisherClient_Push(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		pub := NewPublisherClient(
+		pub, err := NewPublisherClient(
 			"pub",
 			"publisher",
 			10,
@@ -116,7 +116,12 @@ func TestPublisherClient_Push(t *testing.T) {
 			port,
 			address)
 
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		defer func() {
+			pub.Close()
 			err := stopQlite(cmd)
 			if err != nil {
 				t.Fatal(err)
@@ -143,20 +148,25 @@ func TestPublisherClient_Push(t *testing.T) {
 
 		kill := make(chan struct{})
 
-		defer func() {
-			err := stopQlite(cmd)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-
-		pub := NewPublisherClient(
+		pub, err := NewPublisherClient(
 			"pub",
 			"publisher",
 			10,
 			maxIoTime,
 			port,
 			address)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		defer func() {
+			pub.Close()
+			err := stopQlite(cmd)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}()
 
 		errSlice := make([]error, 5)
 		wg := sync.WaitGroup{}
@@ -192,7 +202,7 @@ func TestSubscriberClient_Hide(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		pub := NewPublisherClient(
+		pub, err := NewPublisherClient(
 			"pub",
 			"publisher",
 			10,
@@ -200,7 +210,12 @@ func TestSubscriberClient_Hide(t *testing.T) {
 			port,
 			address)
 
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		defer func() {
+			pub.Close()
 			err := stopQlite(cmd)
 			if err != nil {
 				t.Fatal(err)
@@ -215,7 +230,7 @@ func TestSubscriberClient_Hide(t *testing.T) {
 			t.Error(err)
 		}
 
-		sub := NewSubscriberClient(
+		sub, err := NewSubscriberClient(
 			"sub",
 			"subscriber",
 			5,
@@ -223,6 +238,12 @@ func TestSubscriberClient_Hide(t *testing.T) {
 			10,
 			port,
 			address)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		defer sub.Close()
 
 		_, mess, err := sub.Hide(10)
 
@@ -242,14 +263,7 @@ func TestSubscriberClient_Hide(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		defer func() {
-			err := stopQlite(cmd)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-
-		sub := NewSubscriberClient(
+		sub, err := NewSubscriberClient(
 			"sub",
 			"subscriber",
 			5,
@@ -257,6 +271,18 @@ func TestSubscriberClient_Hide(t *testing.T) {
 			10,
 			port,
 			address)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		defer func() {
+			sub.Close()
+			err := stopQlite(cmd)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}()
 
 		_, _, err = sub.Hide(10)
 
@@ -274,7 +300,7 @@ func TestSubscriberClient_Poll(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		pub := NewPublisherClient(
+		pub, err := NewPublisherClient(
 			"pub",
 			"publisher",
 			10,
@@ -282,7 +308,12 @@ func TestSubscriberClient_Poll(t *testing.T) {
 			port,
 			address)
 
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		defer func() {
+			pub.Close()
 			err := stopQlite(cmd)
 			if err != nil {
 				t.Fatal(err)
@@ -300,7 +331,7 @@ func TestSubscriberClient_Poll(t *testing.T) {
 			}
 		}()
 
-		sub := NewSubscriberClient(
+		sub, err := NewSubscriberClient(
 			"sub",
 			"subscriber",
 			5,
@@ -308,6 +339,12 @@ func TestSubscriberClient_Poll(t *testing.T) {
 			10,
 			port,
 			address)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		defer sub.Close()
 
 		_, mess, err := sub.Poll(10)
 
@@ -327,14 +364,7 @@ func TestSubscriberClient_Poll(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		defer func() {
-			err := stopQlite(cmd)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-
-		sub := NewSubscriberClient(
+		sub, err := NewSubscriberClient(
 			"sub",
 			"subscriber",
 			5,
@@ -342,6 +372,17 @@ func TestSubscriberClient_Poll(t *testing.T) {
 			10,
 			port,
 			address)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		defer func() {
+			err := stopQlite(cmd)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}()
 
 		_, _, err = sub.Poll(10)
 
@@ -359,7 +400,7 @@ func TestSubscriberClient_Delete(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		pub := NewPublisherClient(
+		pub, err := NewPublisherClient(
 			"pub",
 			"publisher",
 			10,
@@ -367,7 +408,12 @@ func TestSubscriberClient_Delete(t *testing.T) {
 			port,
 			address)
 
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		defer func() {
+			pub.Close()
 			err := stopQlite(cmd)
 			if err != nil {
 				t.Fatal(err)
@@ -392,7 +438,7 @@ func TestSubscriberClient_Delete(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		sub := NewSubscriberClient(
+		sub, err := NewSubscriberClient(
 			"sub",
 			"subscriber",
 			5,
@@ -400,6 +446,12 @@ func TestSubscriberClient_Delete(t *testing.T) {
 			10,
 			port,
 			address)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		defer sub.Close()
 
 		uid, mess, err := sub.Hide(10)
 
@@ -435,7 +487,7 @@ func TestSubscriberClient_Delete(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		pub := NewPublisherClient(
+		pub, err := NewPublisherClient(
 			"pub",
 			"publisher",
 			10,
@@ -443,7 +495,12 @@ func TestSubscriberClient_Delete(t *testing.T) {
 			port,
 			address)
 
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		defer func() {
+			pub.Close()
 			err := stopQlite(cmd)
 			if err != nil {
 				t.Fatal(err)
@@ -468,7 +525,7 @@ func TestSubscriberClient_Delete(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		sub := NewSubscriberClient(
+		sub, err := NewSubscriberClient(
 			"sub",
 			"subscriber",
 			5,
@@ -476,6 +533,12 @@ func TestSubscriberClient_Delete(t *testing.T) {
 			10,
 			port,
 			address)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		defer sub.Close()
 
 		uid, mess, err := sub.Hide(10)
 
@@ -517,7 +580,7 @@ func TestSubscriberClient_Delete(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		pub := NewPublisherClient(
+		pub, err := NewPublisherClient(
 			"pub",
 			"publisher",
 			10,
@@ -525,7 +588,12 @@ func TestSubscriberClient_Delete(t *testing.T) {
 			port,
 			address)
 
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		defer func() {
+			pub.Close()
 			err := stopQlite(cmd)
 			if err != nil {
 				t.Fatal(err)
@@ -550,7 +618,7 @@ func TestSubscriberClient_Delete(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		sub := NewSubscriberClient(
+		sub, err := NewSubscriberClient(
 			"sub",
 			"subscriber",
 			5,
@@ -558,6 +626,12 @@ func TestSubscriberClient_Delete(t *testing.T) {
 			10,
 			port,
 			address)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		defer sub.Close()
 
 		uid, mess, err := sub.Hide(0)
 
@@ -589,7 +663,7 @@ func Test_ALL(t *testing.T) {
 
 		kill := make(chan struct{})
 
-		pub := NewPublisherClient(
+		pub, err := NewPublisherClient(
 			"pub",
 			"publisher",
 			10,
@@ -597,14 +671,19 @@ func Test_ALL(t *testing.T) {
 			port,
 			address)
 
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		defer func() {
+			pub.Close()
 			err := stopQlite(cmd)
 			if err != nil {
 				t.Fatal(err)
 			}
 		}()
 
-		sub := NewSubscriberClient(
+		sub, err := NewSubscriberClient(
 			"sub",
 			"subscriber",
 			5,
@@ -612,6 +691,12 @@ func Test_ALL(t *testing.T) {
 			10,
 			port,
 			address)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		defer sub.Close()
 
 		errSlice := make([]error, 10)
 		wg := sync.WaitGroup{}
@@ -644,6 +729,6 @@ func Test_ALL(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		fmt.Println(l)
+		fmt.Println("len is", l)
 	})
 }

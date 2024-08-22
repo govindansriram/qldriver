@@ -1,6 +1,7 @@
 package qldriver
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
@@ -59,7 +60,7 @@ func (s *connectionPool) connectionWorker() {
 			c, err := s.createConnection()
 
 			if err != nil {
-				time.Sleep(5 * time.Second)
+				time.Sleep(3 * time.Second)
 				<-s.utilizedConnections
 				continue
 			}
@@ -107,6 +108,10 @@ func (s *connectionPool) len() (int, error) {
 	return int(lth), nil
 }
 
+func (s *connectionPool) close() {
+	close(s.kill)
+}
+
 type PublisherClient struct {
 	cPool connectionPool
 }
@@ -121,7 +126,7 @@ func NewPublisherClient(
 	maxConnections,
 	maxIoTimeSeconds,
 	port uint16,
-	address string) PublisherClient {
+	address string) (PublisherClient, error) {
 
 	cp := connectionPool{
 		username:            username,
@@ -143,11 +148,36 @@ func NewPublisherClient(
 		sc.cPool.connectionWorker()
 	}()
 
-	return sc
+	filledStruct := make(chan struct{})
+
+	go func() {
+		for {
+			if len(sc.cPool.readyConnections) > 0 {
+				filledStruct <- struct{}{}
+				return
+			}
+		}
+	}()
+
+	ctx, cf := context.WithTimeout(context.Background(), time.Second*5)
+
+	defer cf()
+
+	select {
+	case <-ctx.Done():
+		sc.cPool.close()
+		return PublisherClient{}, errors.New("could not connect to qlite server")
+	case <-filledStruct:
+		return sc, nil
+	}
 }
 
 func (pc PublisherClient) Len() (int, error) {
 	return pc.cPool.len()
+}
+
+func (pc PublisherClient) Close() {
+	pc.cPool.close()
 }
 
 func (pc PublisherClient) Push(mess []byte) (int, error) {
@@ -181,7 +211,7 @@ func NewSubscriberClient(
 	maxIoTimeSeconds,
 	maxPollingTimeSeconds,
 	port uint16,
-	address string) SubscriberClient {
+	address string) (SubscriberClient, error) {
 
 	cp := connectionPool{
 		username:              username,
@@ -204,11 +234,36 @@ func NewSubscriberClient(
 		sc.cPool.connectionWorker()
 	}()
 
-	return sc
+	filledStruct := make(chan struct{})
+
+	go func() {
+		for {
+			if len(sc.cPool.readyConnections) > 0 {
+				filledStruct <- struct{}{}
+				return
+			}
+		}
+	}()
+
+	ctx, cf := context.WithTimeout(context.Background(), time.Second*5)
+
+	defer cf()
+
+	select {
+	case <-ctx.Done():
+		sc.cPool.close()
+		return SubscriberClient{}, errors.New("could not connect to qlite server")
+	case <-filledStruct:
+		return sc, nil
+	}
 }
 
 func (sc SubscriberClient) Len() (int, error) {
 	return sc.cPool.len()
+}
+
+func (sc SubscriberClient) Close() {
+	sc.cPool.close()
 }
 
 func (sc SubscriberClient) hideOrPoll(hiddenTime uint16, isPoll bool) (uuid.UUID, []byte, error) {
